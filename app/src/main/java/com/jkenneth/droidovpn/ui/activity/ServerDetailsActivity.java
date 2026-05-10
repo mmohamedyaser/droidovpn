@@ -137,12 +137,11 @@ public class ServerDetailsActivity extends AppCompatActivity implements
 
     @AfterPermissionGranted(RC_WRITE_EXTERNAL_STORAGE_PERM)
     private void importToOpenVpn() {
-        if (EasyPermissions.hasPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            OvpnUtils.importToOpenVpn(ServerDetailsActivity.this, server);
-        } else {
-            EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external),
-                    RC_WRITE_EXTERNAL_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
+        OvpnUtils.importToOpenVpn(ServerDetailsActivity.this, server);
+    }
+
+    private void importToOpenVpnDirect() {
+        OvpnUtils.importToOpenVpn(ServerDetailsActivity.this, server);
     }
 
     @Override
