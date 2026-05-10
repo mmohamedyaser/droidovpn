@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/__TRACKED_VAR__/AppData/Local/Android/**)",
+      "Read(//c/Program Files/Android/**)",
+      "Read(//c/Android/**)",
+      "Bash(find /c -name \"platforms\" -type d)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(ssh linuxvm:*)",
+      "Bash(scp \"C:/Users/mmoha/OneDrive/Documents/Github/droidovpn/write_gradle.py\" linuxvm:~/write_gradle.py)",
+      "Bash(scp \"C:/Users/mmoha/OneDrive/Documents/Github/droidovpn/app/build.gradle\" linuxvm:~/github/droidovpn/app/build.gradle)"
+    ]
+  }
+}

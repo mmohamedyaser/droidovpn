@@ -164,25 +164,18 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        switch (id) {
-            case R.id.sort_country:
+        if (id == R.id.sort_country) {
                 item.setChecked(item.isChecked());
                 sort(SORT_COUNTRY);
-                break;
-            case R.id.sort_speed:
+        } else if (id == R.id.sort_speed) {
                 item.setChecked(item.isChecked());
                 sort(SORT_SPEED);
-                break;
-            case R.id.sort_ping:
+        } else if (id == R.id.sort_ping) {
                 item.setChecked(item.isChecked());
                 sort(SORT_PING);
-                break;
-            case R.id.action_licenses:
+        } else if (id == R.id.action_licenses) {
                 LicensesDialogFragment licensesDialog = new LicensesDialogFragment();
                 licensesDialog.show(getSupportFragmentManager(), DIALOG_LICENSES_TAG);
-                break;
-            // case R.id.action_settings:
-            //    break;
         }
 
         return super.onOptionsItemSelected(item);
