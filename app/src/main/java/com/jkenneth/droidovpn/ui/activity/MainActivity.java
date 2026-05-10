@@ -221,6 +221,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadServerList(List<Server> serverList) {
+        servers.clear();
+        servers.addAll(serverList);
         adapter.setServerList(serverList);
         dbHelper.save(servers);
 
@@ -271,9 +273,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fetchMirrorList() {
-        final List<String> cachedMirrors = new ArrayList<>();
-
-        final Request request = new Request.Builder()
+final Request request = new Request.Builder()
                 .url(VPN_GATE_MIRRORS_API)
                 .build();
 
