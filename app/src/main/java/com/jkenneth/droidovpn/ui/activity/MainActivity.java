@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SORT_PING = 3;
 
     private static final String DIALOG_LICENSES_TAG = "licenses-dialog";
-    private static final String VPN_GATE_MIRRORS_API = "https://raw.githubusercontent.com/mmohamedyaser/vpngate-mirrors/master/README.md";
+    private static final String VPN_GATE_MIRRORS_API = "https://raw.githubusercontent.com/funcra/vg-mirror/main/servers.csv";
 
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -352,41 +352,23 @@ public class MainActivity extends AppCompatActivity {
 
     private void showMirrorDialog() {
         final String[] mirrors = {
-            "Auto (vpngate.net)",
-            "Mirror 1 (217.138.212.46)",
-            "Mirror 2 (161.202.144.236)",
-            "Mirror 3 (5.181.235.14)",
-            "Mirror 4 (213.136.92.167)",
-            "Mirror 5 (78.142.193.246)"
+            "vpngate.net (Primary)",
+            "funcra/vg-mirror (CSV)"
         };
         final String[] mirrorUrls = {
-            null,
-            "http://217.138.212.46:34663/",
-            "http://161.202.144.236:56364/",
-            "http://5.181.235.14:29916/",
-            "http://213.136.92.167:13182/",
-            "http://78.142.193.246:33304/"
+            BuildConfig.VPN_GATE_API,
+            VPN_GATE_MIRRORS_API
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.select_mirror);
         builder.setItems(mirrors, (dialog, which) -> {
-            if (which == 0) {
-                Toast.makeText(this, R.string.using_primary, Toast.LENGTH_SHORT).show();
-                primaryRequest = new Request.Builder()
-                        .url(BuildConfig.VPN_GATE_API)
-                        .build();
-                isMirrorFallback = false;
-                populateServerList();
-            } else {
-                String mirror = mirrorUrls[which];
-                String csvUrl = mirror + "api/iphone/";
-                Toast.makeText(this, getString(R.string.using_specific_mirror, mirror), Toast.LENGTH_SHORT).show();
-                Request request = new Request.Builder()
-                        .url(csvUrl)
-                        .build();
-                fetchFromMirror(request);
-            }
+            String csvUrl = mirrorUrls[which];
+            Toast.makeText(this, getString(R.string.using_specific_mirror, mirrors[which]), Toast.LENGTH_SHORT).show();
+            Request request = new Request.Builder()
+                    .url(csvUrl)
+                    .build();
+            fetchFromMirror(request);
         });
         builder.show();
     }
