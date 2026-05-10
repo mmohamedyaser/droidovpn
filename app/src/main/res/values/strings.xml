@@ -45,4 +45,6 @@
 
     <string name="invalid_server">Server details is not available.</string>
     <string name="empty_list">No servers available.</string>
+    <string name="cannot_fetch_servers">Unable to fetch servers. Please check your internet connection.</string>
+    <string name="using_mirror">Using mirror server</string>
 </resources>

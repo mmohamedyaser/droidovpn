@@ -2,6 +2,8 @@ package com.jkenneth.droidovpn.util;
 
 import android.util.Base64;
 
+import androidx.annotation.NonNull;
+
 import com.jkenneth.droidovpn.model.Server;
 
 import java.io.BufferedReader;
@@ -10,11 +12,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import okhttp3.Response;
 
 /**
- * Parse CSV from VPN Gate API
+ * Parse mirror list and VPN Gate CSV data
  *
  * Copyright (C) 2015  Jhon Kenneth Carino
  *
@@ -53,6 +57,13 @@ public class CsvParser {
 
     private static final int PORT_INDEX = 2;
     private static final int PROTOCOL_INDEX = 1;
+
+    private static final Pattern MIRROR_PATTERN = Pattern.compile(
+            "(\\d+)\\.\\s*(http://[^\\s]+)\\s*[/\\s]*\\((?:Location:?\\s*)?([^)]+)\\)"
+    );
+    private static final Pattern MIRROR_SIMPLE_PATTERN = Pattern.compile(
+            "(\\d+)\\.\\s*(http://[^\\s/]+:\\d+/)\\s*-\\s*([^-]+)"
+    );
 
     public static Server stringToServer(String line) {
         String[] vpn = line.split(",");
@@ -110,6 +121,47 @@ public class CsvParser {
         }
 
         return servers;
+    }
+
+    /**
+     * Parse mirror list from GitHub README
+     * @param response HTTP response containing mirror list
+     * @return list of mirror base URLs (e.g., "http://217.138.212.46:34663/")
+     */
+    public static List<String> parseMirrorList(Response response) {
+        List<String> mirrors = new ArrayList<>();
+        BufferedReader reader = null;
+        InputStream in = null;
+        try {
+            in = response.body().byteStream();
+            reader = new BufferedReader(new InputStreamReader(in));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Try pattern: 1. http://217.138.212.46:34663/ - United Kingdom
+                Matcher m = MIRROR_SIMPLE_PATTERN.matcher(line.trim());
+                if (m.matches()) {
+                    String url = m.group(2).trim();
+                    if (!url.endsWith("/")) url += "/";
+                    mirrors.add(url);
+                    continue;
+                }
+                // Try pattern: 1. http://217.138.212.46:34663/ (Location: United Kingdom)
+                Matcher m2 = MIRROR_PATTERN.matcher(line.trim());
+                if (m2.matches()) {
+                    String url = m2.group(2).trim();
+                    if (!url.endsWith("/")) url += "/";
+                    mirrors.add(url);
+                }
+            }
+        } catch (IOException ignored) {
+        } finally {
+            try {
+                if (reader != null) reader.close();
+                if (in != null) in.close();
+            } catch (IOException ignored) {
+            }
+        }
+        return mirrors;
     }
 
     /**

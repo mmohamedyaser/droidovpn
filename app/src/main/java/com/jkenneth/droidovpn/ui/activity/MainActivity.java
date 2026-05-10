@@ -2,15 +2,18 @@ package com.jkenneth.droidovpn.ui.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.Toolbar;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.badoo.mobile.util.WeakHandler;
 import com.jkenneth.droidovpn.BuildConfig;
@@ -61,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SORT_PING = 3;
 
     private static final String DIALOG_LICENSES_TAG = "licenses-dialog";
+    private static final String VPN_GATE_MIRRORS_API = "https://raw.githubusercontent.com/waylau/vpngate-mirrors/master/README.md";
 
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -70,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Server> servers = new ArrayList<>();
 
-    private Request request;
+    private Request primaryRequest;
+    private Request mirrorListRequest;
 
     private Call mCall;
 
@@ -79,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
     private DbHelper dbHelper;
 
     private int sortedBy;
+
+    private boolean isMirrorFallback = false;
 
 
     @Override
@@ -99,11 +106,13 @@ public class MainActivity extends AppCompatActivity {
         setupSwipeRefreshLayout();
         setupRecyclerView();
 
-        if (request == null) {
-            request = new Request.Builder()
-                    .url(BuildConfig.VPN_GATE_API)
-                    .build();
-        }
+        primaryRequest = new Request.Builder()
+                .url(BuildConfig.VPN_GATE_API)
+                .build();
+
+        mirrorListRequest = new Request.Builder()
+                .url(VPN_GATE_MIRRORS_API)
+                .build();
 
         if (servers.isEmpty()) {
             populateServerList();
@@ -219,8 +228,9 @@ public class MainActivity extends AppCompatActivity {
     /** Displays the updated list of VPN servers */
     private void populateServerList() {
         swipeRefreshLayout.setRefreshing(true);
+        isMirrorFallback = false;
 
-        mCall = okHttpClient.newCall(request);
+        mCall = okHttpClient.newCall(primaryRequest);
         mCall.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -228,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         swipeRefreshLayout.setRefreshing(false);
+                        fetchMirrorList();
                     }
                 });
             }
@@ -244,6 +255,94 @@ public class MainActivity extends AppCompatActivity {
                             swipeRefreshLayout.setRefreshing(false);
                         }
                     });
+                } else {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            swipeRefreshLayout.setRefreshing(false);
+                            fetchMirrorList();
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void fetchMirrorList() {
+        final List<String> cachedMirrors = new ArrayList<>();
+
+        final Request request = new Request.Builder()
+                .url(VPN_GATE_MIRRORS_API)
+                .build();
+
+        mCall = okHttpClient.newCall(request);
+        mCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this,
+                                R.string.cannot_fetch_servers, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    final List<String> mirrors = CsvParser.parseMirrorList(response);
+                    tryMirror(mirrors, 0);
+                }
+            }
+        });
+    }
+
+    private void tryMirror(final List<String> mirrors, final int index) {
+        if (index >= mirrors.size()) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this,
+                            R.string.cannot_fetch_servers, Toast.LENGTH_LONG).show();
+                }
+            });
+            return;
+        }
+
+        final String mirror = mirrors.get(index);
+        final String csvUrl = mirror + "api/iphone/";
+
+        final Request request = new Request.Builder()
+                .url(csvUrl)
+                .build();
+
+        mCall = okHttpClient.newCall(request);
+        mCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                tryMirror(mirrors, index + 1);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    final List<Server> serverList = CsvParser.parse(response);
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (!serverList.isEmpty()) {
+                                Toast.makeText(MainActivity.this,
+                                        R.string.using_mirror, Toast.LENGTH_SHORT).show();
+                                loadServerList(serverList);
+                                swipeRefreshLayout.setRefreshing(false);
+                            } else {
+                                tryMirror(mirrors, index + 1);
+                            }
+                        }
+                    });
+                } else {
+                    tryMirror(mirrors, index + 1);
                 }
             }
         });
