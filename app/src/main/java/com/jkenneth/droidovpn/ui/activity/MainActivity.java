@@ -64,7 +64,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int SORT_PING = 3;
 
     private static final String DIALOG_LICENSES_TAG = "licenses-dialog";
-    private static final String VPN_GATE_MIRRORS_API = "https://raw.githubusercontent.com/funcra/vg-mirror/main/servers.csv";
+    private static final String VPN_GATE_PRIMARY_API = "https://raw.githubusercontent.com/funcra/vg-mirror/main/servers.csv";
+    private static final String VPN_GATE_FALLBACK_API = BuildConfig.VPN_GATE_API;
 
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Server> servers = new ArrayList<>();
 
-    private Request primaryRequest;
+    private Request primaryRequest; // kept for legacy reference
     private Request mirrorListRequest;
 
     private Call mCall;
@@ -85,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
     private int sortedBy;
 
-    private boolean isMirrorFallback = false;
+
 
 
     @Override
@@ -106,12 +107,10 @@ public class MainActivity extends AppCompatActivity {
         setupSwipeRefreshLayout();
         setupRecyclerView();
 
-        primaryRequest = new Request.Builder()
-                .url(BuildConfig.VPN_GATE_API)
-                .build();
+
 
         mirrorListRequest = new Request.Builder()
-                .url(VPN_GATE_MIRRORS_API)
+                .url(VPN_GATE_FALLBACK_API)
                 .build();
 
         if (servers.isEmpty()) {
@@ -232,9 +231,8 @@ public class MainActivity extends AppCompatActivity {
     /** Displays the updated list of VPN servers */
     private void populateServerList() {
         swipeRefreshLayout.setRefreshing(true);
-        isMirrorFallback = false;
 
-        mCall = okHttpClient.newCall(primaryRequest);
+
         mCall.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -242,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         swipeRefreshLayout.setRefreshing(false);
-                        fetchMirrorList();
+                        tryFallback();
                     }
                 });
             }
@@ -264,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             swipeRefreshLayout.setRefreshing(false);
-                            fetchMirrorList();
+                            tryFallback();
                         }
                     });
                 }
@@ -272,9 +270,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void fetchMirrorList() {
+    private void tryFallback() {
 final Request request = new Request.Builder()
-                .url(VPN_GATE_MIRRORS_API)
+                .url(VPN_GATE_FALLBACK_API)
                 .build();
 
         mCall = okHttpClient.newCall(request);
@@ -357,7 +355,7 @@ final Request request = new Request.Builder()
         };
         final String[] mirrorUrls = {
             BuildConfig.VPN_GATE_API,
-            VPN_GATE_MIRRORS_API
+            VPN_GATE_FALLBACK_API
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
