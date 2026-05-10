@@ -121,7 +121,7 @@ public class OvpnUtils {
     private static File getFile(@NonNull Context context, @NonNull Server server) {
         File filePath;
         if (!Environment.isExternalStorageRemovable() || isExternalStorageWritable()) {
-            filePath = context.getExternalCacheDir();
+            filePath = context.getCacheDir(); // internal only
         } else {
             filePath = context.getCacheDir();
         }
