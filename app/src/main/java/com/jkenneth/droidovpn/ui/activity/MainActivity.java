@@ -5,9 +5,9 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
-import androidx.appcompat.app.AlertDialog;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -16,7 +16,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.badoo.mobile.util.WeakHandler;
-import com.jkenneth.droidovpn.BuildConfig;
 import com.jkenneth.droidovpn.R;
 import com.jkenneth.droidovpn.data.DbHelper;
 import com.jkenneth.droidovpn.model.Server;
@@ -37,26 +36,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-/**
- * Shows the list of parsed servers from VPN Gate CSV
- *
- * Copyright (C) 2015  Jhon Kenneth Carino
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Created by Jhon Kenneth Carino on 10/18/15.
- */
 public class MainActivity extends AppCompatActivity {
 
     private static final int SORT_COUNTRY = 1;
@@ -65,53 +44,32 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String DIALOG_LICENSES_TAG = "licenses-dialog";
     private static final String VPN_GATE_PRIMARY_API = "https://raw.githubusercontent.com/funcra/vg-mirror/main/servers.csv";
-    private static final String VPN_GATE_FALLBACK_API = BuildConfig.VPN_GATE_API;
+    private static final String VPN_GATE_FALLBACK_API = "http://www.vpngate.net/api/iphone/";
 
     private SwipeRefreshLayout swipeRefreshLayout;
-
     private WeakHandler handler;
-
     private OkHttpClient okHttpClient = new OkHttpClient();
-
     private List<Server> servers = new ArrayList<>();
-
-    private Request primaryRequest; // kept for legacy reference
-    private Request mirrorListRequest;
-
     private Call mCall;
-
     private ServerAdapter adapter;
-
     private DbHelper dbHelper;
-
     private int sortedBy;
-
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         handler = new WeakHandler();
         dbHelper = DbHelper.getInstance(this.getApplicationContext());
 
-        // Retrieve all cached servers
         servers.addAll(dbHelper.getAll());
 
-        // Set up the toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Set up the other views
         setupSwipeRefreshLayout();
         setupRecyclerView();
-
-
-
-        mirrorListRequest = new Request.Builder()
-                .url(VPN_GATE_FALLBACK_API)
-                .build();
 
         if (servers.isEmpty()) {
             populateServerList();
@@ -132,8 +90,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupRecyclerView() {
         adapter = new ServerAdapter(servers, serverClickCallback);
         EmptyRecyclerView recyclerView = findViewById(R.id.recyclerview);
-        RecyclerView.ItemDecoration itemDecoration = new
-                DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
+        RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
         recyclerView.setHasFixedSize(true);
         recyclerView.addItemDecoration(itemDecoration);
         recyclerView.setLayoutManager(new LinearLayoutManager(recyclerView.getContext()));
@@ -141,15 +98,14 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
-    private final ServerAdapter.ServerClickCallback serverClickCallback =
-            new ServerAdapter.ServerClickCallback() {
-                @Override
-                public void onItemClick(@NonNull Server server) {
-                    Intent intent = new Intent(MainActivity.this, ServerDetailsActivity.class);
-                    intent.putExtra(ServerDetailsActivity.EXTRA_DETAILS, server);
-                    startActivity(intent);
-                }
-            };
+    private final ServerAdapter.ServerClickCallback serverClickCallback = new ServerAdapter.ServerClickCallback() {
+        @Override
+        public void onItemClick(@NonNull Server server) {
+            Intent intent = new Intent(MainActivity.this, ServerDetailsActivity.class);
+            intent.putExtra(ServerDetailsActivity.EXTRA_DETAILS, server);
+            startActivity(intent);
+        }
+    };
 
     @Override
     protected void onDestroy() {
@@ -173,19 +129,19 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.sort_country) {
-                item.setChecked(item.isChecked());
-                sort(SORT_COUNTRY);
+            item.setChecked(item.isChecked());
+            sort(SORT_COUNTRY);
         } else if (id == R.id.sort_speed) {
-                item.setChecked(item.isChecked());
-                sort(SORT_SPEED);
+            item.setChecked(item.isChecked());
+            sort(SORT_SPEED);
         } else if (id == R.id.sort_ping) {
-                item.setChecked(item.isChecked());
-                sort(SORT_PING);
+            item.setChecked(item.isChecked());
+            sort(SORT_PING);
         } else if (id == R.id.action_mirror) {
-                showMirrorDialog();
+            showMirrorDialog();
         } else if (id == R.id.action_licenses) {
-                LicensesDialogFragment licensesDialog = new LicensesDialogFragment();
-                licensesDialog.show(getSupportFragmentManager(), DIALOG_LICENSES_TAG);
+            LicensesDialogFragment licensesDialog = new LicensesDialogFragment();
+            licensesDialog.show(getSupportFragmentManager(), DIALOG_LICENSES_TAG);
         }
 
         return super.onOptionsItemSelected(item);
@@ -200,17 +156,11 @@ public class MainActivity extends AppCompatActivity {
                 int compareTo = 0;
                 if (sortBy == SORT_COUNTRY) {
                     compareTo = server.countryLong.compareTo(server2.countryLong);
-
                 } else if (sortBy == SORT_SPEED) {
-                    compareTo = Long.valueOf(server2.speed)
-                            .compareTo(server.speed);
-
+                    compareTo = Long.valueOf(server2.speed).compareTo(server.speed);
                 } else if (sortBy == SORT_PING) {
-                    Long ping = !server.ping.equals("-") ?
-                            Long.valueOf(server.ping) : 0L;
-                    Long ping2 = !server2.ping.equals("-") ?
-                            Long.valueOf(server2.ping) : 0L;
-
+                    Long ping = !server.ping.equals("-") ? Long.valueOf(server.ping) : 0L;
+                    Long ping2 = !server2.ping.equals("-") ? Long.valueOf(server2.ping) : 0L;
                     compareTo = ping2.compareTo(ping);
                 }
                 return compareTo;
@@ -224,15 +174,17 @@ public class MainActivity extends AppCompatActivity {
         servers.addAll(serverList);
         adapter.setServerList(serverList);
         dbHelper.save(servers);
-
         sort(sortedBy);
     }
 
-    /** Displays the updated list of VPN servers */
     private void populateServerList() {
         swipeRefreshLayout.setRefreshing(true);
 
+        Request request = new Request.Builder()
+                .url(VPN_GATE_PRIMARY_API)
+                .build();
 
+        mCall = okHttpClient.newCall(request);
         mCall.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -248,12 +200,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    final List<Server> servers = CsvParser.parse(response);
-
+                    final List<Server> serverList = CsvParser.parse(response);
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            loadServerList(servers);
+                            loadServerList(serverList);
                             swipeRefreshLayout.setRefreshing(false);
                         }
                     });
@@ -271,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void tryFallback() {
-final Request request = new Request.Builder()
+        Request request = new Request.Builder()
                 .url(VPN_GATE_FALLBACK_API)
                 .build();
 
@@ -282,46 +233,9 @@ final Request request = new Request.Builder()
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(MainActivity.this,
-                                R.string.cannot_fetch_servers, Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, R.string.cannot_fetch_servers, Toast.LENGTH_LONG).show();
                     }
                 });
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    final List<String> mirrors = CsvParser.parseMirrorList(response);
-                    tryMirror(mirrors, 0);
-                }
-            }
-        });
-    }
-
-    private void tryMirror(final List<String> mirrors, final int index) {
-        if (index >= mirrors.size()) {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(MainActivity.this,
-                            R.string.cannot_fetch_servers, Toast.LENGTH_LONG).show();
-                }
-            });
-            return;
-        }
-
-        final String mirror = mirrors.get(index);
-        final String csvUrl = mirror + "api/iphone/";
-
-        final Request request = new Request.Builder()
-                .url(csvUrl)
-                .build();
-
-        mCall = okHttpClient.newCall(request);
-        mCall.enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                tryMirror(mirrors, index + 1);
             }
 
             @Override
@@ -332,40 +246,36 @@ final Request request = new Request.Builder()
                         @Override
                         public void run() {
                             if (!serverList.isEmpty()) {
-                                Toast.makeText(MainActivity.this,
-                                        R.string.using_mirror, Toast.LENGTH_SHORT).show();
                                 loadServerList(serverList);
-                                swipeRefreshLayout.setRefreshing(false);
                             } else {
-                                tryMirror(mirrors, index + 1);
+                                Toast.makeText(MainActivity.this, R.string.cannot_fetch_servers, Toast.LENGTH_LONG).show();
                             }
+                            swipeRefreshLayout.setRefreshing(false);
                         }
                     });
                 } else {
-                    tryMirror(mirrors, index + 1);
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, R.string.cannot_fetch_servers, Toast.LENGTH_LONG).show();
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+                    });
                 }
             }
         });
     }
 
     private void showMirrorDialog() {
-        final String[] mirrors = {
-            "vpngate.net (Primary)",
-            "funcra/vg-mirror (CSV)"
-        };
-        final String[] mirrorUrls = {
-            BuildConfig.VPN_GATE_API,
-            VPN_GATE_FALLBACK_API
-        };
+        final String[] mirrors = {"funcra/vg-mirror (Primary)", "vpngate.net (Fallback)"};
+        final String[] mirrorUrls = {VPN_GATE_PRIMARY_API, VPN_GATE_FALLBACK_API};
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.select_mirror);
         builder.setItems(mirrors, (dialog, which) -> {
             String csvUrl = mirrorUrls[which];
             Toast.makeText(this, getString(R.string.using_specific_mirror, mirrors[which]), Toast.LENGTH_SHORT).show();
-            Request request = new Request.Builder()
-                    .url(csvUrl)
-                    .build();
+            Request request = new Request.Builder().url(csvUrl).build();
             fetchFromMirror(request);
         });
         builder.show();
@@ -409,5 +319,4 @@ final Request request = new Request.Builder()
             }
         });
     }
-
 }
